@@ -1,10 +1,7 @@
 import math as m
-from typing import List
+import time
 
-
-def readData(fn: str) -> List:
-    with open(fn, "r") as infile:
-        return [int(x.split("\n")[0]) for x in infile.readlines()]
+from lib.utils import readnumbers, timestamp
 
 
 def getFuel(mass: int) -> int:
@@ -18,12 +15,14 @@ def getTotalFuel(fuelmass: int) -> int:
     return 0
 
 
-data = readData("day1/data.csv")
+data = readnumbers("day1.csv")
 
 # step 1
+start = time.time()
 fuels = [getFuel(x) for x in data]
-print(f"Answer 1: {sum(fuels)}")
+timestamp(start, f"Answer 1: {sum(fuels)}")
 
 # step 2
+start = time.time()
 totalfuels = [getTotalFuel(x) for x in data]
-print(f"Answer 2: {sum(totalfuels)}")
+timestamp(start, f"Answer 2: {sum(totalfuels)}")

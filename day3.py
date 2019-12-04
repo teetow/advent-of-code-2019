@@ -124,7 +124,7 @@ def get_best_path(paths):
 
 
 def test():
-    # part 1 tests
+    # Part 1 tests
     d0a = "R8,U5,L5,D3".split(",")
     d0b = "U7,R6,D4,L4".split(",")
     r0 = get_best_mdist([d0a, d0b])
@@ -140,29 +140,30 @@ def test():
     r2 = get_best_mdist([d2a, d2b])
     assert r2 == 135
 
-    # Part 2 tests
-    r2 = get_best_path([d1a, d1b])
-    assert r2 == 610
+    print("Part 1 tests passed.")
 
+    # Part 2 tests
+    assert get_best_path([d1a, d1b]) == 610
     assert get_best_path([d2a, d2b]) == 410
 
-# test()
+    print("Part 2 tests passed.")
 
 
-def part1(paths):
-    return get_best_mdist(paths)
+test()
 
 
-def part2(paths):
-    return get_best_path(paths)
+def part1(data):
+    start = time.time()
+    p1result = get_best_mdist(data)
+    timestamp(start, f"Part 1: {p1result}")
 
 
-data = readdata_csv("day3.csv")
+def part2(data):
+    start = time.time()
+    p2result = get_best_path(data)
+    timestamp(start, f"Part 2: {p2result}")
 
-start = time.time()
-p1result = part1(data)
-timestamp(start, f"Part 1: {p1result}")
 
-start = time.time()
-p2result = part2(data)
-timestamp(start, f"Part 2: {p2result}")
+testdata = readdata_csv("day3.csv")
+part1(testdata)
+part2(testdata)

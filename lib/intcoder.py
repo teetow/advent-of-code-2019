@@ -19,6 +19,10 @@ class Intcoder:
             rs = self.call(self.opcode)
         return rs
 
+    def finalstate(self):
+        self.run()
+        return self.data
+
     def get(self, offset=0):
         return self.data[self.ptr + offset + 1]  # off by one?
 

@@ -12,6 +12,11 @@ def readnumbers_csv(fn: str) -> List[List[int]]:
         return [[int(n) for n in x.split(",")] for x in infile.readlines()]
 
 
+def readdata_csv(fn: str) -> List[List[int]]:
+    with open(fn, "r") as infile:
+        return [[n for n in x.split(",")] for x in infile.readlines()]
+
+
 def timestamp(start, msg=""):
     delta = (time.time() - start)*1000
     unit = "ms"

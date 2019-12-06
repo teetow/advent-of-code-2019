@@ -19,41 +19,33 @@ class ParamMode(IntEnum):
     Positional = 0
     Immediate = 1
 
-    @staticmethod
-    def parse(val: int):
-        return ParamMode(val)
-
 
 class Instruction:
     opcode: Opcode
     params: List[int]
     modes: List[ParamMode]
 
-    def __init__(self, opcode: Opcode, num_params: int):
+    def __init__(self, opcode: Opcode):
         self.opcode = opcode
+        num_params = PARAM_COUNTS[opcode]
         self.params = [0] * num_params
-        self.modes = [ParamMode.Positional] * self.num_params
+        self.modes = [ParamMode.Positional] * num_params
 
     @property
     def num_params(self):
-        return len(self.params)
-
-    @staticmethod
-    def from_opcode(raw_opcode: str) -> "Instruction":
-        opcode = Opcode(int(raw_opcode))
-        return deepcopy(INSTRSET[opcode])
+        return PARAM_COUNTS[self.opcode]
 
 
-INSTRSET = {
-    Opcode.Add: Instruction(Opcode.Add, 3),
-    Opcode.Mul: Instruction(Opcode.Mul, 3),
-    Opcode.Input: Instruction(Opcode.Input, 1),
-    Opcode.Output: Instruction(Opcode.Output, 1),
-    Opcode.JumpIfTrue: Instruction(Opcode.JumpIfTrue, 2),
-    Opcode.JumpIfFalse: Instruction(Opcode.JumpIfFalse, 2),
-    Opcode.LessThan: Instruction(Opcode.LessThan, 3),
-    Opcode.Equals: Instruction(Opcode.Equals, 3),
-    Opcode.Halt: Instruction(Opcode.Halt, 0),
+PARAM_COUNTS = {
+    Opcode.Add:  3,
+    Opcode.Mul:  3,
+    Opcode.Input:  1,
+    Opcode.Output:  1,
+    Opcode.JumpIfTrue:  2,
+    Opcode.JumpIfFalse:  2,
+    Opcode.LessThan:  3,
+    Opcode.Equals:  3,
+    Opcode.Halt:  0,
 }
 
 
@@ -64,7 +56,7 @@ class Intcoder:
     outbuffer: List[int]
 
     def __init__(self, data, input_buffer: List[int] = None):
-        self.data = deepcopy(data)
+        self.data = data
         self.ptr = 0
         self.inbuffer = input_buffer if input_buffer else []
         self.outbuffer = []
@@ -85,7 +77,7 @@ class Intcoder:
 
     def next_instr(self):
         raw_opcode = str(self.data[self.ptr])
-        instr = Instruction.from_opcode(raw_opcode[-2:])
+        instr = Instruction(Opcode(int(raw_opcode[-2:])))
 
         def get_mode(param_no: int) -> ParamMode:
             offset = -3 - param_no
@@ -97,7 +89,7 @@ class Intcoder:
             mode = get_mode(x)
             instr.modes[x] = mode
             instr.params[x] = self.data[self.ptr + x]
-        self.step(len(instr.params))
+        self.step(instr.num_params)
         return instr
 
     def call(self, instr: Instruction):

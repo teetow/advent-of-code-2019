@@ -11,6 +11,10 @@ def readnumbers_csv(fn: str) -> List[List[int]]:
     with open(fn, "r") as infile:
         return [[int(n) for n in x.split(",")] for x in infile.readlines()]
 
+def readdata(fn: str) -> List[str]:
+    with open(fn, "r") as infile:
+        return [x.strip() for x in infile.readlines()]
+
 
 def readdata_csv(fn: str) -> List[List[int]]:
     with open(fn, "r") as infile:

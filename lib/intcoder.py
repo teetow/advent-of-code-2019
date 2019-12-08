@@ -1,6 +1,6 @@
-from typing import List, NamedTuple
+from copy import deepcopy
 from enum import IntEnum
-from copy import copy, deepcopy
+from typing import List
 
 
 class Opcode(IntEnum):
@@ -58,10 +58,12 @@ class Intcoder:
     def __init__(self, data, input_buffer: List[int] = None):
         self.data = data
         self.ptr = 0
-        self.inbuffer = input_buffer if input_buffer else []
+        self.inbuffer = deepcopy(input_buffer) if input_buffer else []
         self.outbuffer = []
 
-    def run(self):
+    def run(self, input_buffer: List[int] = None):
+        if input_buffer:
+            self.inbuffer = deepcopy(input_buffer)
         rs = None
         while rs is None:
             instr = self.next_instr()

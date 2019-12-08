@@ -1,5 +1,6 @@
 import time
 from typing import List
+import json
 
 
 def readnumbers(fn: str) -> List[int]:
@@ -10,6 +11,7 @@ def readnumbers(fn: str) -> List[int]:
 def readnumbers_csv(fn: str) -> List[List[int]]:
     with open(fn, "r") as infile:
         return [[int(n) for n in x.split(",")] for x in infile.readlines()]
+
 
 def readdata(fn: str) -> List[str]:
     with open(fn, "r") as infile:
@@ -28,3 +30,8 @@ def timestamp(start, msg=""):
         delta = delta * 1000
         unit = "µs"
     print(f"{delta:8.2f} {unit}\t{msg}")
+
+
+def dumpdata(data, fn: str):
+    with open(fn, "w") as outfile:
+        json.dump(data, outfile, indent=4)

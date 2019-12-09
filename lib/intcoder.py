@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import IntEnum
-from typing import List
+from typing import List, NamedTuple
 
 
 class Opcode(IntEnum):
@@ -35,6 +35,10 @@ class Instruction:
     def num_params(self):
         return PARAM_COUNTS[self.opcode]
 
+    @property
+    def size(self):
+        return self.num_params + 1
+
 
 PARAM_COUNTS = {
     Opcode.Add:  3,
@@ -47,6 +51,17 @@ PARAM_COUNTS = {
     Opcode.Equals:  3,
     Opcode.Halt:  0,
 }
+
+
+class RunResult(IntEnum):
+    Halted = 0,
+    NeedInput = 1,
+    HasOutput = 2,
+
+
+class ReturnVal(NamedTuple):
+    result: RunResult
+    output: int
 
 
 class Intcoder:
@@ -70,6 +85,20 @@ class Intcoder:
             rs = self.call(instr)
         return rs
 
+    def run_until_io(self) -> ReturnVal:  # result, output
+        while True:
+            instr = self.next_instr()
+
+            rs = self.call(instr)
+            if rs or instr.opcode == Opcode.Halt:
+                return ReturnVal(RunResult.Halted, rs)
+
+            if self.peek_instr().opcode == Opcode.Input and not self.inbuffer:
+                return ReturnVal(RunResult.NeedInput, 0)
+
+            if instr.opcode == Opcode.Output:
+                return ReturnVal(RunResult.HasOutput, self.outbuffer[-1])
+
     def finalstate(self):
         self.run()
         return self.data
@@ -77,7 +106,12 @@ class Intcoder:
     def putaddr(self, idx: int, val=0):
         self.data[idx] = val
 
-    def next_instr(self):
+    def next_instr(self) -> Instruction:
+        instr = self.peek_instr()
+        self.step(instr.size)
+        return instr
+
+    def peek_instr(self) -> Instruction:
         raw_opcode = str(self.data[self.ptr])
         instr = Instruction(Opcode(int(raw_opcode[-2:])))
 
@@ -86,12 +120,10 @@ class Intcoder:
             modeflag = int(raw_opcode[offset]) if len(raw_opcode) >= abs(offset) else 0
             return ParamMode(modeflag)
 
-        self.step()
         for x in range(0, instr.num_params):
             mode = get_mode(x)
             instr.modes[x] = mode
-            instr.params[x] = self.data[self.ptr + x]
-        self.step(instr.num_params)
+            instr.params[x] = self.data[self.ptr + x + 1]
         return instr
 
     def call(self, instr: Instruction):

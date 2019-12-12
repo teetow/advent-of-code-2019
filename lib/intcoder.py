@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import IntEnum
-from typing import List, NamedTuple
+from typing import Dict, List, NamedTuple
 
 
 class Opcode(IntEnum):
@@ -12,12 +12,14 @@ class Opcode(IntEnum):
     JumpIfFalse = 6
     LessThan = 7
     Equals = 8
+    ChangePtrOffset = 9
     Halt = 99
 
 
 class ParamMode(IntEnum):
     Positional = 0
     Immediate = 1
+    Relative = 2
 
 
 class Instruction:
@@ -31,6 +33,10 @@ class Instruction:
         self.params = [0] * num_params
         self.modes = [ParamMode.Positional] * num_params
 
+    def __repr__(self):
+        mergedparams = [f"{x}({self.modes[i].name})" for i, x in enumerate(self.params)]
+        return f"{self.opcode.name}[{', '.join(mergedparams)}]"
+
     @property
     def num_params(self):
         return PARAM_COUNTS[self.opcode]
@@ -41,15 +47,16 @@ class Instruction:
 
 
 PARAM_COUNTS = {
-    Opcode.Add:  3,
-    Opcode.Mul:  3,
-    Opcode.Input:  1,
-    Opcode.Output:  1,
-    Opcode.JumpIfTrue:  2,
-    Opcode.JumpIfFalse:  2,
-    Opcode.LessThan:  3,
-    Opcode.Equals:  3,
-    Opcode.Halt:  0,
+    Opcode.Add: 3,
+    Opcode.Mul: 3,
+    Opcode.Input: 1,
+    Opcode.Output: 1,
+    Opcode.JumpIfTrue: 2,
+    Opcode.JumpIfFalse: 2,
+    Opcode.LessThan: 3,
+    Opcode.Equals: 3,
+    Opcode.ChangePtrOffset: 1,
+    Opcode.Halt: 0,
 }
 
 
@@ -64,15 +71,38 @@ class ReturnVal(NamedTuple):
     output: int
 
 
+class Mem(list):
+    values: Dict[int, int]
+
+    def __init__(self, data):
+        super().__init__()
+        self.values = {}
+        self.init(data)
+
+    def init(self, data: List):
+        for i in range(len(data)):
+            self.values[i] = data[i]
+
+    def __setitem__(self, key, value):
+        self.values[key] = value
+
+    def __getitem__(self, index):
+        if index in self.values:
+            return self.values[index]
+        return 0
+
+
 class Intcoder:
-    data: List[int]
+    data: Mem
     ptr: int
+    ptroffset: int
     inbuffer: List[int]
     outbuffer: List[int]
 
     def __init__(self, data, input_buffer: List[int] = None):
-        self.data = data
+        self.data = Mem(data)
         self.ptr = 0
+        self.ptroffset = 0
         self.inbuffer = deepcopy(input_buffer) if input_buffer else []
         self.outbuffer = []
 
@@ -127,19 +157,25 @@ class Intcoder:
         return instr
 
     def call(self, instr: Instruction):
-        def deref(i: int):
+        def resolve_addr(i: int):
             if instr.modes[i] == ParamMode.Positional:
-                return self.data[(instr.params[i])]
-            return instr.params[i]
+                return instr.params[i]
+            elif instr.modes[i] == ParamMode.Relative:
+                return self.ptroffset + instr.params[i]
+
+        def deref(i: int):
+            if instr.modes[i] == ParamMode.Immediate:
+                return instr.params[i]
+            return self.data[resolve_addr(i)]
 
         if instr.opcode == Opcode.Add:
-            self.putaddr(instr.params[2], deref(0) + deref(1))
+            self.putaddr(resolve_addr(2), deref(0) + deref(1))
 
         elif instr.opcode == Opcode.Mul:
-            self.putaddr(instr.params[2], deref(0) * deref(1))
+            self.putaddr(resolve_addr(2), deref(0) * deref(1))
 
         elif instr.opcode == Opcode.Input:
-            self.putaddr(instr.params[0], self.readbuffer())
+            self.putaddr(resolve_addr(0), self.readbuffer())
 
         elif instr.opcode == Opcode.Output:
             self.outbuffer.append(deref(0))
@@ -153,10 +189,13 @@ class Intcoder:
                 self.ptr = deref(1)
 
         elif instr.opcode == Opcode.LessThan:
-            self.putaddr(instr.params[2], 1 if deref(0) < deref(1) else 0)
+            self.putaddr(resolve_addr(2), 1 if deref(0) < deref(1) else 0)
 
         elif instr.opcode == Opcode.Equals:
-            self.putaddr(instr.params[2], 1 if deref(0) == deref(1) else 0)
+            self.putaddr(resolve_addr(2), 1 if deref(0) == deref(1) else 0)
+
+        elif instr.opcode == Opcode.ChangePtrOffset:
+            self.ptroffset += deref(0)
 
         elif instr.opcode == Opcode.Halt:
             return self.halt()
@@ -165,8 +204,6 @@ class Intcoder:
             raise Exception(f"Illegal opcode {instr.opcode}. System on fire.")
 
     def step(self, steps=1):
-        if self.ptr + steps > len(self.data):
-            raise Exception("OOB")
         self.ptr += steps
 
     def readbuffer(self):

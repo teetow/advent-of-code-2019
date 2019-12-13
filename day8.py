@@ -2,12 +2,10 @@ import time
 from dataclasses import dataclass
 from typing import List, NamedTuple
 
+from lib.gfx import Point
 from lib.utils import timestamp
 
 
-class Point(NamedTuple):
-    x: int
-    y: int
 
 
 @dataclass

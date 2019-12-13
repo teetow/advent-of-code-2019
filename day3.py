@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, NamedTuple, Tuple
 
+from lib.gfx import Point
 from lib.utils import readdata_csv, timestamp
 
 nodepattern: re.Pattern = re.compile(r"(?P<direction>\w)(?P<length>\d+)")
@@ -14,11 +15,6 @@ class Direction(Enum):
     Down = "D"
     Left = "L"
     Right = "R"
-
-
-class Point(NamedTuple):
-    x: int
-    y: int
 
 
 @dataclass

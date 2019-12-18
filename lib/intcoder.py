@@ -115,6 +115,17 @@ class Intcoder:
             rs = self.call(instr)
         return rs
 
+    def run_until_input(self) -> ReturnVal:
+        while True:
+            instr = self.next_instr()
+            rs = self.call(instr)
+
+            if rs or instr.opcode == Opcode.Halt:
+                return ReturnVal(RunResult.Halted, rs)
+
+            if self.peek_instr().opcode == Opcode.Input and not self.inbuffer:
+                return ReturnVal(RunResult.NeedInput, 0)
+
     def run_until_io(self) -> ReturnVal:  # result, output
         while True:
             instr = self.next_instr()

@@ -1,10 +1,16 @@
 import math as m
-from typing import NamedTuple
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Callable, Dict, List
 
 
-class Point(NamedTuple):
-    x: int
-    y: int
+@dataclass(frozen=True)
+class Point():
+    x: int = 0
+    y: int = 0
+
+    def __add__(self, other: "Point"):
+        return Point(self.x + other.x, self.y + other.y)
 
 
 QUADS = {
@@ -61,6 +67,48 @@ class FracCoord():
         if self.x == other.x and self.y == other.y:
             return True
         return self.__lt__(other)
+
+
+class MapRender():
+    """
+    Render a dict of Points and any kind of value to a list of strings.
+    Optionally uses a callback to resolve the map symbol to plot.
+    """
+    token_resolver: Callable[[any], str]
+
+    def __init__(self, token_resolver: Callable[[any], str] = None):
+        self.token_resolver = token_resolver if token_resolver else None
+
+    def render(self, data: Dict[Point, any], token_resolver: Callable[[any], str] = None) -> List[str]:
+        if token_resolver:
+            self.token_resolver = token_resolver
+        paint_map = deepcopy(data)
+        keys = paint_map.keys()
+        xvals = [coord.x for coord in keys]
+        xmin = min(xvals)-1
+        xmax = max(xvals)+1
+        width = max(5, (xmax - xmin)*2)
+
+        yvals = [coord.y for coord in keys]
+        ymin = min(yvals)-1
+        ymax = max(yvals)+1
+        height = max(5, (ymax - ymin)*2)
+        fill_char = self.token_resolver(0) if self.token_resolver else "."
+        chart = [fill_char * (width) for y in range(height)]
+
+        def plot(pt: Point, val):
+            line = chart[pt.y]
+            chars = list(line)
+            chars[pt.x] = val
+            chart[pt.y] = "".join(chars)
+
+        offset = Point(width // 2, height // 2)
+        for pt, token in paint_map.items():
+            token_char = token_resolver(token) if self.token_resolver else "#"
+            plot(pt + offset, token_char)
+
+        return chart
+
 
 def test():
     pass

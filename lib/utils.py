@@ -1,6 +1,6 @@
+import json
 import time
 from typing import List
-import json
 
 
 def readnumbers(fn: str) -> List[int]:

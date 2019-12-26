@@ -3,6 +3,11 @@ import time
 from typing import List
 
 
+def read_digits(fn: str) -> List[int]:
+    with open(fn, "r") as infile:
+        lines = infile.readlines()
+        return [[int(y) for y in line] for line in [x for x in lines]]
+
 def readnumbers(fn: str) -> List[int]:
     with open(fn, "r") as infile:
         return [int(x.strip()) for x in infile.readlines()]
